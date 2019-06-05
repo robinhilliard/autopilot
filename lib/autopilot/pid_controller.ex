@@ -38,7 +38,7 @@ defmodule Autopilot.PIDController do
       err_sum:      err_sum,
       err_prev:     err_prev,
       time_prev:    time_prev
-    } = pid_state = state[{:pid, feedback_key, setpoint_key, output_key}]
+    } = pid_state = state |> Map.fetch!({:pid, feedback_key, setpoint_key, output_key})
     
     # Calculate error
     feedback = state[feedback_key]
@@ -65,6 +65,7 @@ defmodule Autopilot.PIDController do
           },
           time
         }
+        
       true ->
         # PID can only accumulate errors and set output once per time step
         # Update PID state so that we can calculate error rate and output next time
