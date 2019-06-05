@@ -127,7 +127,9 @@ defmodule PIDControllerTest do
           s1.output >= -0.05 and s1.output <= 0.05 ->
             %{s1 | feedback: s1.feedback + s1.output}
           true ->
-            %{s1 | limits_exceeded: [s1.output | s1.limits_exceeded], feedback: s1.feedback + s1.output}
+            %{s1 |
+              limits_exceeded: [s1.output | s1.limits_exceeded],
+              feedback: s1.feedback + s1.output}
         end
       end
     )
