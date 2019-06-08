@@ -3,6 +3,7 @@ defmodule PIDControllerTest do
   import Enum, only: [reduce: 3]
   import Autopilot.PIDController
   alias Autopilot.PIDController, as: PIDController
+  doctest PIDController
 
   test "add_pid defaults" do
     %{{:pid, :feedback, :setpoint, :output} => %PIDController{
