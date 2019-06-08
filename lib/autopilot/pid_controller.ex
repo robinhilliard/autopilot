@@ -23,7 +23,7 @@ defmodule Autopilot.PIDController do
   unless the time has increased since the last call for that controller.
   
   ## Example
-  
+
       iex> state = %{feedback: 1.0, setpoint: 0.0, output: 0.0}
       %{feedback: 1.0, output: 0.0, setpoint: 0.0}
       iex> state = state |> add_pid(:feedback, :setpoint, :output, p: 0.1, i: 0.09, d: -0.03)
@@ -48,6 +48,20 @@ defmodule Autopilot.PIDController do
       ...>     %{s1 | feedback: s1.feedback + s1.output + 0.01}
       ...>   end)[:feedback]
       -7.551632489127894e-4
+    
+  1. Create a state map with a feedback that we are trying to set to 0.0 by adjusting an output used by
+  a simple simulation
+  2. Add pid details to the state, specifying the map keys containing the feedback, setpoint and output values
+  and some PID coefficients developed for this example by trial and error
+  3. Iterate to allow the controller to take control of the simulation:
+  
+      - Pass the current state and a monotonically increasing time counter in a tuple to `set_pid_output()`
+        which calculates an output and stores it in the `:output` key of our state map
+      - Simulate a system being controlled, which adds the output of the pid to its position (indicated by
+        the feedback value) and drifts a little in the positive direction (perhaps due to wind or gravity) and
+        updates the value of our state's `:feedback` key
+  4. Return the feedback after 66 iterations, which is close to the desired setpoint of 0.0 at ~ -0.00075
+
   """
   
   
