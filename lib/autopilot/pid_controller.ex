@@ -12,7 +12,7 @@ defmodule Autopilot.PIDController do
   Several well known techniques for tuning these values can be found on the web.
   
   Typically pid controllers are chained together, with the output of one controller acting as the
-  setpoint of another controller. To facilitate composable chains of pid controllers the `add_pid`
+  setpoint of another controller. To facilitate composable chains of pid controllers the `add_pid()`
   and `set_pid_output()` functions work with a map containing a mix of feedback, setpoint, output
   and pid parameters, which allows pid calculations to access input/output values and update their
   own state as required. Individual pid controllers are identified by unique feedback, setpoint and
@@ -24,30 +24,30 @@ defmodule Autopilot.PIDController do
   
   ## Example
   
-    iex> state = %{feedback: 1.0, setpoint: 0.0, output: 0.0}
-    %{feedback: 1.0, output: 0.0, setpoint: 0.0}
-    iex> state = state |> add_pid(:feedback, :setpoint, :output, p: 0.1, i: 0.09, d: -0.03)
-    %{
-      :feedback => 1.0,
-      :output => 0.0,
-      :setpoint => 0.0,
-      {:pid, :feedback, :setpoint, :output} => %Autopilot.PIDController{
-        d: -0.03,
-        err_prev: 0.0,
-        err_sum: 0.0,
-        i: 0.09,
-        output_max: 1.0,
-        output_min: -1.0,
-        p: 0.1,
-        time_prev: :pos_infinity
+      iex> state = %{feedback: 1.0, setpoint: 0.0, output: 0.0}
+      %{feedback: 1.0, output: 0.0, setpoint: 0.0}
+      iex> state = state |> add_pid(:feedback, :setpoint, :output, p: 0.1, i: 0.09, d: -0.03)
+      %{
+        :feedback => 1.0,
+        :output => 0.0,
+        :setpoint => 0.0,
+        {:pid, :feedback, :setpoint, :output} => %Autopilot.PIDController{
+          d: -0.03,
+          err_prev: 0.0,
+          err_sum: 0.0,
+          i: 0.09,
+          output_max: 1.0,
+          output_min: -1.0,
+          p: 0.1,
+          time_prev: :pos_infinity
+        }
       }
-    }
-    iex> Enum.reduce(1..66, state,
-    ...>   fn time, state ->
-    ...>     {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
-    ...>     %{s1 | feedback: s1.feedback + s1.output + 0.01}
-    ...>   end)[:feedback]
-    -7.551632489127894e-4
+      iex> Enum.reduce(1..66, state,
+      ...>   fn time, state ->
+      ...>     {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
+      ...>     %{s1 | feedback: s1.feedback + s1.output + 0.01}
+      ...>   end)[:feedback]
+      -7.551632489127894e-4
   """
   
   
@@ -114,7 +114,7 @@ defmodule Autopilot.PIDController do
   end
   
   
-  @spec step_pid(t, number, float, float) :: {t, float}
+  @spec step_pid(t, number, float, float) :: {t, float | nil}
   
   defp step_pid(
     pid_state = %__MODULE__{
@@ -123,7 +123,6 @@ defmodule Autopilot.PIDController do
       output_min: output_min, output_max: output_max},
     time, feedback, setpoint)
       when time > time_prev
-           and is_number(time)
            and is_float(feedback)
            and is_float(setpoint) do
     
