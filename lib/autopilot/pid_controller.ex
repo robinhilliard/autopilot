@@ -57,10 +57,12 @@ defmodule Autopilot.PIDController do
   
       - Pass the current state and a monotonically increasing time counter in a tuple to `set_pid_output()`
         which calculates an output and stores it in the `:output` key of our state map
+      - The updated state and current time are returned as a tuple, so if we had another pid we could pipe
+        this to a second `set_pid_output()`
       - Simulate a system being controlled, which adds the output of the pid to its position (indicated by
         the feedback value) and drifts a little in the positive direction (perhaps due to wind or gravity) and
         updates the value of our state's `:feedback` key
-  4. Return the feedback after 66 iterations, which is close to the desired setpoint of 0.0 at ~ -0.00075
+  4. Return the feedback after 66 iterations, which is indeed close to the desired setpoint of 0.0 at ~ -0.00075
 
   """
   
