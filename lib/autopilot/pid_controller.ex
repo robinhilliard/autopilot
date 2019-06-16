@@ -9,7 +9,7 @@ defmodule Autopilot.PIDController do
   - I(ntegral): What is the cumulative sum of all errors (positive and negative) to date?
   - D(erivative): How quickly is the error changing?
   
-  Several well known techniques for tuning these values can be found on the web.
+  Several well known techniques for tuning these values can be [found on the web](https://www.machinedesign.com/sensors/introduction-pid-control).
   
   Typically pid controllers are chained together, with the output of one controller acting as the
   setpoint of another controller. To facilitate composable chains of pid controllers the `add_pid()`
