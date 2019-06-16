@@ -14,15 +14,15 @@ defmodule Autopilot.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
-      registered: [Autopilot]
+      mod: {Autopilot.Application,[]},
+      registered: [:autopilot]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:xplane, "~> 0.4.0", hex: :elixplane},
+      {:xplane, "~> 0.5.0", hex: :elixplane},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:dialyzex, "~> 1.2.0", only: :dev}
     ]
