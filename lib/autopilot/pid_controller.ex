@@ -9,25 +9,27 @@ defmodule Autopilot.PIDController do
   - I(ntegral): What is the cumulative sum of all errors (positive and negative) to date?
   - D(erivative): How quickly is the error changing?
   
-  Several well known techniques for tuning these values can be [found on the web](https://www.machinedesign.com/sensors/introduction-pid-control).
+  Several well known techniques for tuning these values can be
+  [found on the web](https://www.machinedesign.com/sensors/introduction-pid-control).
   
-  Typically pid controllers are chained together, with the output of one controller acting as the
+  Often pid controllers are chained together, with the output of one controller acting as the
   setpoint of another controller. To facilitate composable chains of pid controllers the `add_pid()`
   and `set_pid_output()` functions work with a map containing a mix of feedback, setpoint, output
   and pid parameters, which allows pid calculations to access input/output values and update their
   own state as required. Individual pid controllers are identified by unique feedback, setpoint and
   output key combinations.
   
-  Users are responsible for providing a time parameter to `set_pid_output()`, used to calculate
-  error change rates. The function will not accumulate errors or set the output for a controller
-  unless the time has increased since the last call for that controller.
+  A special `:time` key in the state is used to calculate error change rates. The user is responsible
+  for updating this key monotonically: the `set_pid_output()` function will not accumulate errors or
+  set the output for a controller unless the time has increased since the last call for that controller.
   
   ## Example
 
-      iex> state = %{feedback: 1.0, setpoint: 0.0, output: 0.0}
-      %{feedback: 1.0, output: 0.0, setpoint: 0.0}
+      iex> state = %{time: 0.0, feedback: 1.0, setpoint: 0.0, output: 0.0}
+      %{time: 0.0, feedback: 1.0, output: 0.0, setpoint: 0.0}
       iex> state = state |> add_pid(:feedback, :setpoint, :output, p: 0.1, i: 0.09, d: -0.03)
       %{
+        :time => 0.0,
         :feedback => 1.0,
         :output => 0.0,
         :setpoint => 0.0,
@@ -43,9 +45,9 @@ defmodule Autopilot.PIDController do
         }
       }
       iex> Enum.reduce(1..66, state,
-      ...>   fn time, state ->
-      ...>     {new_state, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
-      ...>     %{new_state | feedback: new_state.feedback + new_state.output + 0.01}
+      ...>   fn _, state ->
+      ...>     new_state = state |> set_pid_output(:feedback, :setpoint, :output)
+      ...>     %{new_state | feedback: new_state.feedback + new_state.output + 0.01, time: state.time + 1}
       ...>   end)[:feedback]
       -7.551632489127894e-4
     
@@ -103,10 +105,9 @@ defmodule Autopilot.PIDController do
   end
   
   
-  @spec set_pid_output({map, number}, atom, atom, atom) :: {map, number}
-  def set_pid_output({state, time}, feedback_key, setpoint_key, output_key)
+  @spec set_pid_output(map, atom, atom, atom) :: {map, number}
+  def set_pid_output(state, feedback_key, setpoint_key, output_key)
       when is_map(state)
-           and is_number(time)
            and is_atom(feedback_key)
            and is_atom(setpoint_key)
            and is_atom(output_key) do
@@ -116,14 +117,14 @@ defmodule Autopilot.PIDController do
     feedback = Map.fetch!(state, feedback_key)
     setpoint = Map.fetch!(state, setpoint_key)
     
-    {new_pid_state, output} = step_pid(pid_state, time, feedback, setpoint)
+    {new_pid_state, output} = step_pid(pid_state, state.time, feedback, setpoint)
     
     case output do
       nil ->
-        {%{state | pid_key => new_pid_state}, time}
+        %{state | pid_key => new_pid_state}
         
       _ ->
-        {%{state | output_key => output, pid_key => new_pid_state}, time}
+        %{state | output_key => output, pid_key => new_pid_state}
         
     end
     

@@ -42,6 +42,7 @@ defmodule PIDControllerTest do
   
   test "Output not set without time increase" do
     start_state = %{
+      time: 0,
       feedback: 1.0,
       setpoint: 0.0,
       output: 0.0,
@@ -54,8 +55,8 @@ defmodule PIDControllerTest do
     
     end_state = reduce(1..10, start_state,
       fn _, state ->
-        {s1, _} = {state, 0} |> set_pid_output(:feedback, :setpoint, :output)
-        %{s1 | feedback: s1.feedback + s1.output}
+        next_state = state |> set_pid_output(:feedback, :setpoint, :output)
+        %{next_state | feedback: next_state.feedback + next_state.output}
       end
     )
     
@@ -65,6 +66,7 @@ defmodule PIDControllerTest do
   
   test "P converges" do
     start_state = %{
+      time: 0,
       feedback: 1.0,
       setpoint: 0.0,
       output: 0.0,
@@ -76,9 +78,9 @@ defmodule PIDControllerTest do
          p: 0.1, i: 0.0, d: 0.0)
     
     end_state = reduce(1..67, start_state,
-      fn time, state ->
-        {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
-        %{s1 | feedback: s1.feedback + s1.output}
+      fn _, state ->
+        new_state = state |> set_pid_output(:feedback, :setpoint, :output)
+        %{new_state | feedback: new_state.feedback + new_state.output, time: state.time + 1}
       end
     )
     
@@ -88,6 +90,7 @@ defmodule PIDControllerTest do
   
   test "PI copes with drift" do
     start_state = %{
+      time: 0,
       feedback: 1.0,
       setpoint: 0.0,
       output: 0.0,
@@ -99,9 +102,9 @@ defmodule PIDControllerTest do
          p: 0.1, i: 0.09, d: 0.0)
     
     end_state = reduce(1..67, start_state,
-      fn time, state ->
-        {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
-        %{s1 | feedback: s1.feedback + s1.output + 0.01}
+      fn _, state ->
+        new_state = state |> set_pid_output(:feedback, :setpoint, :output)
+        %{new_state | feedback: new_state.feedback + new_state.output + 0.01, time: state.time + 1}
       end
     )
     
@@ -111,6 +114,7 @@ defmodule PIDControllerTest do
   
   test "PID converges more quickly than PI and copes with drift" do
     start_state = %{
+      time: 0,
       feedback: 1.0,
       setpoint: 0.0,
       output: 0.0,
@@ -122,9 +126,9 @@ defmodule PIDControllerTest do
          p: 0.1, i: 0.09, d: -0.03)
     
     end_state = Enum.reduce(1..66, start_state,
-      fn time, state ->
-        {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
-        %{s1 | feedback: s1.feedback + s1.output + 0.01}
+      fn _, state ->
+        new_state = state |> set_pid_output(:feedback, :setpoint, :output)
+        %{new_state | feedback: new_state.feedback + new_state.output + 0.01, time: state.time + 1}
       end
     )
     
@@ -135,6 +139,7 @@ defmodule PIDControllerTest do
   test "PID output min-max limits obeyed" do
     start_state = %{
       limits_exceeded: [],
+      time: 0,
       feedback: 1.0,
       setpoint: 0.0,
       output: 0.0,
@@ -147,15 +152,17 @@ defmodule PIDControllerTest do
          output_min: -0.05, output_max: 0.05)
     
     end_state = reduce(1..67, start_state,
-      fn time, state ->
-        {s1, _} = {state, time} |> set_pid_output(:feedback, :setpoint, :output)
+      fn _, state ->
+        new_state = state |> set_pid_output(:feedback, :setpoint, :output)
         cond do
-          s1.output >= -0.05 and s1.output <= 0.05 ->
-            %{s1 | feedback: s1.feedback + s1.output}
+          new_state.output >= -0.05 and new_state.output <= 0.05 ->
+            %{new_state | feedback: new_state.feedback + new_state.output}
           true ->
-            %{s1 |
-              limits_exceeded: [s1.output | s1.limits_exceeded],
-              feedback: s1.feedback + s1.output}
+            %{new_state |
+              limits_exceeded: [new_state.output | new_state.limits_exceeded],
+              feedback: new_state.feedback + new_state.output,
+              time: state.time + 1
+             }
         end
       end
     )
