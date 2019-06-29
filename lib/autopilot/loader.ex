@@ -9,6 +9,8 @@ defmodule Autopilot.Loader do
   
   use GenServer
   
+  alias XPlane.Instance, as: Instances
+  
   
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -26,11 +28,11 @@ defmodule Autopilot.Loader do
     {
       :noreply,
       Enum.reduce(
-        XPlane.Instance.list()
+        Instances.list()
         |> Enum.filter(
           fn inst ->
             case inst do
-                 %XPlane.Instance{host: :xplane, role: :master, addr: a} ->
+                 %Instances{host: :xplane, role: :master, addr: a} ->
                   !Map.has_key?(state, a)
                 _ ->
                   false
@@ -39,7 +41,7 @@ defmodule Autopilot.Loader do
         ),
         state,
         fn instance, state ->
-          start_autopilot(instance)
+          {:ok, _, _, _} = start_autopilot(instance)
           Map.put_new(state, instance.addr, instance)
         end)
     }
@@ -52,8 +54,10 @@ defmodule Autopilot.Loader do
   
   
   defp start_autopilot(instance) do
-    DynamicSupervisor.start_child(AutopilotSupervisor, {XPlane.Cmd, instance})
-    DynamicSupervisor.start_child(AutopilotSupervisor, {XPlane.Data, instance})
+    {:ok, cmd_pid} = DynamicSupervisor.start_child(AutopilotSupervisor, {XPlane.Cmd, instance})
+    {:ok, data_pid} = DynamicSupervisor.start_child(AutopilotSupervisor, {XPlane.Data, instance})
+    {:ok, autopilot_pid} = DynamicSupervisor.start_child(AutopilotSupervisor, {Autopilot.Server, instance})
+    {:ok, cmd_pid, data_pid, autopilot_pid}
   end
   
 end
