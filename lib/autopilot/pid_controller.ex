@@ -132,6 +132,9 @@ defmodule Autopilot.PIDController do
   
   
   @spec step_pid(t, number, float, float) :: {t, float | nil}
+  defp step_pid(t, _, _, nil), do: {t, nil}
+  
+  defp step_pid(t, _, nil, _), do: {t, nil}
   
   defp step_pid(
     pid_state = %__MODULE__{
