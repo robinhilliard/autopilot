@@ -77,14 +77,16 @@ defmodule Autopilot.PIDController do
     output_max: 1.0,
     err_sum: 0.0,             # Sum of errors for Integral
     err_prev: 0.0,            # To calculate error change rate
-    time_prev: :pos_infinity  # numbers < atoms term ordering hack
+    time_prev: :pos_infinity, # numbers < atoms term ordering hack
+    modulo: nil
   ]
   
   @type t :: %__MODULE__{
     p: float, i: float, d: float,
     output_min: float, output_max: float,
     err_sum: float, err_prev: float,
-    time_prev: number | atom
+    time_prev: number | atom,
+    modulo: nil | number
   }
   
   
@@ -114,8 +116,11 @@ defmodule Autopilot.PIDController do
     
     pid_key = {:pid, feedback_key, setpoint_key, output_key}
     pid_state = Map.fetch!(state, pid_key)
-    feedback = Map.fetch!(state, feedback_key)
-    setpoint = Map.fetch!(state, setpoint_key)
+    
+    {feedback, setpoint} = modulo_check(
+      Map.fetch!(state, feedback_key),
+      Map.fetch!(state, setpoint_key),
+      pid_state)
     
     {new_pid_state, output} = step_pid(pid_state, state.time, feedback, setpoint)
     
@@ -128,6 +133,23 @@ defmodule Autopilot.PIDController do
         
     end
     
+  end
+  
+  @spec modulo_check(float, float, %__MODULE__{}) :: {float, float}
+  defp modulo_check(feedback, setpoint, %__MODULE__{modulo: nil}) do
+    {feedback, setpoint}
+  end
+  
+  defp modulo_check(feedback, setpoint, %__MODULE__{modulo: m}) when (feedback - setpoint) > m / 2.0 do
+    {feedback, setpoint + m}
+  end
+  
+  defp modulo_check(feedback, setpoint, %__MODULE__{modulo: m}) when (setpoint - feedback) > m / 2.0 do
+    {feedback + m, setpoint}
+  end
+  
+  defp modulo_check(feedback, setpoint, _) do
+    {feedback, setpoint}
   end
   
   
