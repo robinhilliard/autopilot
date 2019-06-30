@@ -22,6 +22,7 @@ defmodule Autopilot.State do
     altitude_setpoint: 0.0,     # selected altitude
     vs_setpoint: 0.0,           # vertical speed setpoint
     alpha_setpoint: 0.0,        # pitch angle of attack setpoint
+    beta_setpoint: 0.0,        # yaw angle of attack setpoint
     airspeed_setpoint: 0.0,     # selected airspeed
     phi: 0.0,                   # roll, degrees
     psi: 0.0,                   # heading, degrees true, hpath + beta = psi
@@ -59,6 +60,7 @@ defmodule Autopilot.State do
     altitude_setpoint: float,
     vs_setpoint: float,
     alpha_setpoint: float,
+    beta_setpoint: float,
     airspeed_setpoint: float,
     phi: float,
     psi: float,
