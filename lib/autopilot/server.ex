@@ -34,7 +34,7 @@ defmodule Autopilot.Server do
 
   
   @impl true
-  def handle_call(_msg, _from, state) do
+  def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
