@@ -9,8 +9,9 @@ defmodule Autopilot.PIDController do
   - I(ntegral): What is the cumulative sum of all errors (positive and negative) to date?
   - D(erivative): How quickly is the error changing?
   
-  Several well known techniques for tuning these values can be
-  [found on the web](https://www.machinedesign.com/sensors/introduction-pid-control).
+  Several well known techniques for tuning these values can be found on the web:
+  - [Introduction to PID control](https://www.machinedesign.com/sensors/introduction-pid-control)
+  - [Five Deadly Mistakes](https://www.pidtuning.net/fivedeadlymistakes.html)
   
   Often pid controllers are chained together, with the output of one controller acting as the
   setpoint of another controller. To facilitate composable chains of pid controllers the `add_pid()`
@@ -22,6 +23,10 @@ defmodule Autopilot.PIDController do
   A special `:time` key in the state is used to calculate error change rates. The user is responsible
   for updating this key monotonically: the `set_pid_output()` function will not accumulate errors or
   set the output for a controller unless the time has increased since the last call for that controller.
+  
+  `add_pid(modulo: 360.0)` tells the PID that the feedback can reach the setpoint in either direction,
+  and the pid will choose the error given by the shortest path between them. This is useful for angular
+  feedback such as a wheel position, or vehicle rolls and headings.
   
   ## Example
 
